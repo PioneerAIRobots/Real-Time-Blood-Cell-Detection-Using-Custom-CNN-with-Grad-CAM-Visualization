@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HemaVision AI — Blood Cell Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #030810;
+  --surface: #070f1c;
+  --surface2: #0c1829;
+  --border: rgba(99,179,237,0.12);
+  --accent: #38bdf8;
+  --accent2: #818cf8;
+  --accent3: #34d399;
+  --text: #e2e8f0;
+  --text-muted: #64748b;
+  --eosinophil: #f87171;
+  --lymphocyte: #34d399;
+  --monocyte: #fbbf24;
+  --neutrophil: #60a5fa;
+  --glow: rgba(56,189,248,0.15);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Space Grotesk', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ---- ANIMATED BG ---- */
+.bg-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.bg-canvas canvas { width:100%; height:100%; }
+
+/* ---- PARTICLES ---- */
+#particles {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: float-particle linear infinite;
+}
+
+@keyframes float-particle {
+  0% { transform: translateY(100vh) scale(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 0.6; }
+  100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+}
+
+/* ---- GRID OVERLAY ---- */
+.grid-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(56,189,248,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56,189,248,0.025) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+}
+
+/* ---- LAYOUT ---- */
+.app {
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem 4rem;
+}
+
+/* ---- HEADER ---- */
+header {
+  padding: 3rem 0 2rem;
+  text-align: center;
+  position: relative;
+}
+
+.logo-ring {
+  display: inline-block;
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.logo-svg {
+  width: 80px;
+  height: 80px;
+  animation: spin-slow 8s linear infinite;
+}
+
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+
+.logo-inner {
+  position: absolute;
+  inset: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  background: radial-gradient(circle, var(--accent) 0%, var(--accent2) 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  box-shadow: 0 0 30px rgba(56,189,248,0.6), 0 0 60px rgba(56,189,248,0.3);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 30px rgba(56,189,248,0.6), 0 0 60px rgba(56,189,248,0.3); }
+  50% { box-shadow: 0 0 50px rgba(56,189,248,0.9), 0 0 100px rgba(56,189,248,0.5); }
+}
+
+h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(2.2rem, 5vw, 3.8rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #e2e8f0 0%, var(--accent) 50%, var(--accent2) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+}
+
+.tagline {
+  margin-top: 0.75rem;
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.header-badges {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  padding: 0.35rem 1rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  border: 1px solid;
+}
+
+.badge-blue { border-color: rgba(56,189,248,0.4); color: var(--accent); background: rgba(56,189,248,0.08); }
+.badge-purple { border-color: rgba(129,140,248,0.4); color: var(--accent2); background: rgba(129,140,248,0.08); }
+.badge-green { border-color: rgba(52,211,153,0.4); color: var(--accent3); background: rgba(52,211,153,0.08); }
+
+/* ---- MAIN GRID ---- */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+}
+
+@media (max-width: 900px) {
+  .main-grid { grid-template-columns: 1fr; }
+}
+
+/* ---- CARDS ---- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 1.75rem;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(56,189,248,0.03) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.card:hover { border-color: rgba(56,189,248,0.25); }
+
+.card-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.card-label::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--accent);
+}
+
+/* ---- UPLOAD ZONE ---- */
+.upload-zone {
+  border: 2px dashed rgba(56,189,248,0.25);
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  background: rgba(56,189,248,0.02);
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--accent);
+  background: rgba(56,189,248,0.06);
+  transform: scale(1.01);
+}
+
+.upload-icon {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, rgba(56,189,248,0.2), rgba(129,140,248,0.2));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  border: 1px solid rgba(56,189,248,0.3);
+  transition: all 0.3s;
+}
+
+.upload-zone:hover .upload-icon {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(56,189,248,0.3);
+}
+
+.upload-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.upload-sub {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.upload-formats {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--accent);
+  letter-spacing: 0.1em;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid rgba(56,189,248,0.2);
+  border-radius: 999px;
+}
+
+#fileInput { display: none; }
+
+/* ---- PREVIEW ---- */
+.preview-container {
+  display: none;
+  margin-top: 1.25rem;
+  position: relative;
+}
+
+.preview-container.visible { display: block; }
+
+.preview-img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.preview-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: linear-gradient(to top, rgba(3,8,16,0.8) 0%, transparent 50%);
+  display: flex;
+  align-items: flex-end;
+  padding: 1rem;
+}
+
+.preview-filename {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ---- ANALYZE BTN ---- */
+.btn-analyze {
+  width: 100%;
+  margin-top: 1.25rem;
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #0ea5e9, #818cf8);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-family: 'Syne', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+
+.btn-analyze::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.btn-analyze:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(14,165,233,0.4); }
+.btn-analyze:hover::before { opacity: 1; }
+.btn-analyze:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.btn-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+/* ---- LOADING ---- */
+.loading-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(3,8,16,0.85);
+  backdrop-filter: blur(8px);
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.loading-overlay.active { display: flex; }
+
+.dna-spinner {
+  width: 80px;
+  height: 80px;
+  position: relative;
+}
+
+.dna-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  animation: spin 1.2s linear infinite;
+}
+
+.dna-ring:nth-child(1) {
+  border-top-color: var(--accent);
+  animation-duration: 1s;
+}
+.dna-ring:nth-child(2) {
+  inset: 10px;
+  border-right-color: var(--accent2);
+  animation-duration: 0.8s;
+  animation-direction: reverse;
+}
+.dna-ring:nth-child(3) {
+  inset: 20px;
+  border-bottom-color: var(--accent3);
+  animation-duration: 0.6s;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  color: var(--accent);
+  letter-spacing: 0.1em;
+  animation: blink 1.4s ease-in-out infinite;
+}
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.loading-step {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ---- RESULTS ---- */
+#results { display: none; }
+#results.visible { display: block; }
+
+/* ---- PREDICTION CARD ---- */
+.prediction-hero {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.prediction-hero.revealed {
+  animation: reveal-card 0.6s ease forwards;
+}
+
+@keyframes reveal-card {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.prediction-glow {
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.4;
+  pointer-events: none;
+  transition: background 0.5s;
+}
+
+.prediction-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.cell-type-display {
+  flex: 1;
+}
+
+.cell-type-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.cell-type-name {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.confidence-display {
+  text-align: right;
+}
+
+.confidence-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+
+.confidence-value {
+  font-family: 'Syne', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--accent3);
+}
+
+.confidence-bar-wrap {
+  margin-top: 1.5rem;
+  height: 6px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.confidence-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent3));
+  width: 0;
+  transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 12px rgba(56,189,248,0.6);
+}
+
+.cell-description {
+  margin-top: 1.25rem;
+  padding: 1rem 1.25rem;
+  background: rgba(255,255,255,0.03);
+  border-left: 3px solid;
+  border-radius: 0 10px 10px 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #94a3b8;
+}
+
+.normal-range-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(52,211,153,0.1);
+  border: 1px solid rgba(52,211,153,0.3);
+  color: var(--accent3);
+}
+
+/* ---- PROB BARS ---- */
+.prob-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.prob-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 60px;
+  align-items: center;
+  gap: 0.75rem;
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: all 0.4s ease;
+}
+
+.prob-row.revealed {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.prob-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.prob-bar-wrap {
+  height: 8px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.prob-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  width: 0;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.prob-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  text-align: right;
+  color: var(--text-muted);
+}
+
+/* ---- HEATMAP ---- */
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 600px) {
+  .heatmap-grid { grid-template-columns: 1fr; }
+}
+
+.img-panel {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.img-panel img {
+  width: 100%;
+  display: block;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+.img-panel-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0.5rem 0.75rem;
+  background: linear-gradient(to top, rgba(3,8,16,0.95), transparent);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.heatmap-legend {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.legend-bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #00f, #0ff, #0f0, #ff0, #f00);
+}
+
+.legend-labels {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+/* ---- CELL INFO GRID ---- */
+.cells-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+@media (max-width: 600px) {
+  .cells-info-grid { grid-template-columns: 1fr; }
+}
+
+.cell-info-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.cell-info-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.cell-info-card:hover { transform: translateY(-3px); }
+.cell-info-card:hover::after { opacity: 1; }
+
+.cell-info-card[data-type="EOSINOPHIL"]::after { background: var(--eosinophil); }
+.cell-info-card[data-type="LYMPHOCYTE"]::after { background: var(--lymphocyte); }
+.cell-info-card[data-type="MONOCYTE"]::after { background: var(--monocyte); }
+.cell-info-card[data-type="NEUTROPHIL"]::after { background: var(--neutrophil); }
+
+.cell-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.cell-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cell-card-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.cell-card-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.cell-card-range {
+  margin-top: 0.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--accent3);
+}
+
+/* ---- RESET BTN ---- */
+.btn-reset {
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 0.85rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-muted);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-reset:hover {
+  border-color: rgba(56,189,248,0.4);
+  color: var(--accent);
+  background: rgba(56,189,248,0.05);
+}
+
+/* ---- DEMO BANNER ---- */
+.demo-banner {
+  display: none;
+  padding: 0.75rem 1.25rem;
+  background: rgba(251,191,36,0.1);
+  border: 1px solid rgba(251,191,36,0.3);
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  font-size: 0.82rem;
+  color: #fbbf24;
+  font-family: 'JetBrains Mono', monospace;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.demo-banner.visible { display: flex; }
+
+/* ---- STATS ROW ---- */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 600px) {
+  .stats-row { grid-template-columns: 1fr; }
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.stat-value {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 0.25rem;
+}
+
+/* ---- SCROLLBAR ---- */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: rgba(56,189,248,0.3); border-radius: 999px; }
+
+/* ---- TOAST ---- */
+.toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 200;
+  padding: 0.85rem 1.5rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 0.85rem;
+  transform: translateY(100px);
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast-icon { font-size: 1.1rem; }
+
+/* Scan line animation for images */
+@keyframes scan {
+  0% { top: -100%; }
+  100% { top: 100%; }
+}
+
+.scan-effect {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+.scan-effect::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(to right, transparent, var(--accent), transparent);
+  animation: scan 1.5s linear 1;
+}
+</style>
+</head>
+<body>
+
+<div id="particles"></div>
+<div class="grid-overlay"></div>
+
+<div class="app">
+  <!-- HEADER -->
+  <header>
+    <div class="logo-ring">
+      <svg class="logo-svg" viewBox="0 0 80 80" fill="none">
+        <circle cx="40" cy="40" r="36" stroke="url(#g1)" stroke-width="2" stroke-dasharray="8 4"/>
+        <circle cx="40" cy="40" r="28" stroke="rgba(129,140,248,0.4)" stroke-width="1" stroke-dasharray="4 8"/>
+        <defs>
+          <linearGradient id="g1" x1="0" y1="0" x2="80" y2="80" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#38bdf8"/>
+            <stop offset="100%" stop-color="#818cf8"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <div class="logo-inner">🔬</div>
+    </div>
+
+    <h1>HemaVision AI</h1>
+    <p class="tagline">Deep Learning Blood Cell Intelligence Platform</p>
+
+    <div class="header-badges">
+      <span class="badge badge-blue">99% Accuracy</span>
+      <span class="badge badge-purple">GradCAM Heatmaps</span>
+      <span class="badge badge-green">4 Cell Classes</span>
+      <span class="badge badge-blue">Real-time Analysis</span>
+    </div>
+  </header>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-value">99.1%</div>
+      <div class="stat-label">Model Accuracy</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">4</div>
+      <div class="stat-label">Cell Types</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">224px</div>
+      <div class="stat-label">Input Resolution</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main-grid">
+    <!-- LEFT: Upload Panel -->
+    <div>
+      <div class="card">
+        <div class="card-label">Image Input</div>
+
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+          <div class="upload-icon">🩸</div>
+          <div class="upload-title">Upload Blood Cell Image</div>
+          <div class="upload-sub">Drag & drop or click to browse</div>
+          <div class="upload-formats">JPG · PNG · BMP · TIFF</div>
+        </div>
+
+        <input type="file" id="fileInput" accept="image/*">
+
+        <div class="preview-container" id="previewContainer">
+          <div style="position:relative;">
+            <img id="previewImg" class="preview-img" src="" alt="Preview">
+            <div class="preview-overlay">
+              <span class="preview-filename" id="previewFilename"></span>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-analyze" id="analyzeBtn" disabled onclick="analyzeImage()">
+          <span class="btn-inner">
+            <span>🧬</span>
+            <span>Analyze Blood Cell</span>
+          </span>
+        </button>
+
+        <button class="btn-reset" id="resetBtn" style="display:none" onclick="resetApp()">
+          ↺ Upload New Image
+        </button>
+      </div>
+
+      <!-- Cell Reference Cards -->
+      <div class="card" style="margin-top:1.5rem;">
+        <div class="card-label">Cell Type Reference</div>
+        <div class="cells-info-grid">
+          <div class="cell-info-card" data-type="EOSINOPHIL">
+            <div class="cell-card-header">
+              <div class="cell-dot" style="background:#f87171; box-shadow:0 0 6px #f87171;"></div>
+              <span class="cell-card-name" style="color:#f87171;">Eosinophil</span>
+            </div>
+            <div class="cell-card-desc">Combats parasites; elevated in allergies & asthma.</div>
+            <div class="cell-card-range">Normal: 1–4% WBC</div>
+          </div>
+          <div class="cell-info-card" data-type="LYMPHOCYTE">
+            <div class="cell-card-header">
+              <div class="cell-dot" style="background:#34d399; box-shadow:0 0 6px #34d399;"></div>
+              <span class="cell-card-name" style="color:#34d399;">Lymphocyte</span>
+            </div>
+            <div class="cell-card-desc">Adaptive immunity; B-cells & T-cells.</div>
+            <div class="cell-card-range">Normal: 20–40% WBC</div>
+          </div>
+          <div class="cell-info-card" data-type="MONOCYTE">
+            <div class="cell-card-header">
+              <div class="cell-dot" style="background:#fbbf24; box-shadow:0 0 6px #fbbf24;"></div>
+              <span class="cell-card-name" style="color:#fbbf24;">Monocyte</span>
+            </div>
+            <div class="cell-card-desc">Phagocytic cells; differentiate into macrophages.</div>
+            <div class="cell-card-range">Normal: 2–8% WBC</div>
+          </div>
+          <div class="cell-info-card" data-type="NEUTROPHIL">
+            <div class="cell-card-header">
+              <div class="cell-dot" style="background:#60a5fa; box-shadow:0 0 6px #60a5fa;"></div>
+              <span class="cell-card-name" style="color:#60a5fa;">Neutrophil</span>
+            </div>
+            <div class="cell-card-desc">First responders; most abundant WBC type.</div>
+            <div class="cell-card-range">Normal: 55–70% WBC</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Results Panel -->
+    <div>
+      <!-- Placeholder -->
+      <div id="placeholder" class="card" style="min-height:400px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:1rem;">
+        <div style="font-size:3rem; opacity:0.3;">🔬</div>
+        <div style="color:var(--text-muted); font-size:0.9rem; text-align:center; font-family:'JetBrains Mono',monospace; letter-spacing:0.05em;">
+          Upload a blood cell image to<br>begin AI-powered analysis
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div id="results">
+        <div class="demo-banner" id="demoBanner">
+          ⚠ Demo mode — place best_model.keras in app directory for real predictions
+        </div>
+
+        <!-- Prediction Hero -->
+        <div class="prediction-hero" id="predHero">
+          <div class="prediction-glow" id="predGlow"></div>
+          <div class="prediction-top">
+            <div class="cell-type-display">
+              <div class="cell-type-label">Detected Cell Type</div>
+              <div class="cell-type-name" id="cellTypeName">—</div>
+            </div>
+            <div class="confidence-display">
+              <div class="confidence-label">Confidence</div>
+              <div class="confidence-value" id="confValue">—</div>
+            </div>
+          </div>
+          <div class="confidence-bar-wrap">
+            <div class="confidence-bar-fill" id="confBar"></div>
+          </div>
+          <div class="cell-description" id="cellDesc" style="border-color: var(--accent);"></div>
+          <div class="normal-range-badge" id="normalRange">📊 —</div>
+        </div>
+
+        <!-- Probability Distribution -->
+        <div class="card" style="margin-bottom:1.5rem;">
+          <div class="card-label">Probability Distribution</div>
+          <div class="prob-bars" id="probBars"></div>
+        </div>
+
+        <!-- Heatmap / Images -->
+        <div class="card" id="heatmapCard">
+          <div class="card-label">GradCAM Activation Map</div>
+          <div class="heatmap-grid">
+            <div class="img-panel" id="origPanel">
+              <div class="scan-effect" id="scanEffect"></div>
+              <img id="origImg" src="" alt="Original">
+              <div class="img-panel-label">Original Image</div>
+            </div>
+            <div class="img-panel" id="heatPanel">
+              <img id="heatImg" src="" alt="Heatmap">
+              <div class="img-panel-label">Activation Heatmap</div>
+            </div>
+          </div>
+          <div style="margin-top:0.75rem;">
+            <div class="heatmap-legend">
+              <div class="legend-bar"></div>
+            </div>
+            <div class="legend-labels">
+              <span>Low</span>
+              <span>Medium</span>
+              <span>High Activation</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="dna-spinner">
+    <div class="dna-ring"></div>
+    <div class="dna-ring"></div>
+    <div class="dna-ring"></div>
+  </div>
+  <div class="loading-text">ANALYZING CELL MORPHOLOGY</div>
+  <div class="loading-step" id="loadingStep">Preprocessing image...</div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span class="toast-icon">✅</span>
+  <span id="toastMsg">Analysis complete</span>
+</div>
+
+<script>
+// ---- PARTICLES ----
+(function() {
+  const container = document.getElementById('particles');
+  const colors = ['#38bdf8','#818cf8','#34d399','#f87171','#fbbf24','#60a5fa'];
+  
+  function makeParticle() {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 4 + 1;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    p.style.cssText = `
+      width:${size}px; height:${size}px;
+      left:${Math.random()*100}%;
+      background:${color};
+      box-shadow: 0 0 ${size*3}px ${color};
+      animation-duration: ${Math.random()*15+8}s;
+      animation-delay: ${Math.random()*10}s;
+    `;
+    container.appendChild(p);
+    setTimeout(() => p.remove(), 25000);
+  }
+
+  for(let i=0;i<30;i++) setTimeout(makeParticle, Math.random()*5000);
+  setInterval(makeParticle, 600);
+})();
+
+// ---- FILE UPLOAD ----
+const fileInput = document.getElementById('fileInput');
+const uploadZone = document.getElementById('uploadZone');
+const previewContainer = document.getElementById('previewContainer');
+const previewImg = document.getElementById('previewImg');
+const previewFilename = document.getElementById('previewFilename');
+const analyzeBtn = document.getElementById('analyzeBtn');
+
+let selectedFile = null;
+
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if(file && file.type.startsWith('image/')) handleFile(file);
+});
+
+fileInput.addEventListener('change', e => {
+  if(e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+function handleFile(file) {
+  selectedFile = file;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    previewImg.src = ev.target.result;
+    previewFilename.textContent = file.name;
+    previewContainer.classList.add('visible');
+    analyzeBtn.disabled = false;
+    uploadZone.style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+// ---- ANALYZE ----
+const CELL_COLORS = {
+  EOSINOPHIL: '#f87171',
+  LYMPHOCYTE: '#34d399',
+  MONOCYTE: '#fbbf24',
+  NEUTROPHIL: '#60a5fa'
+};
+
+const loadingSteps = [
+  'Preprocessing image...',
+  'Normalizing pixel values...',
+  'Running SeparableConv2D layers...',
+  'Computing feature maps...',
+  'Applying GlobalAveragePooling...',
+  'Generating Grad-CAM activations...',
+  'Computing softmax probabilities...',
+  'Finalizing results...'
+];
+
+async function analyzeImage() {
+  if(!selectedFile) return;
+
+  const overlay = document.getElementById('loadingOverlay');
+  const stepEl = document.getElementById('loadingStep');
+  overlay.classList.add('active');
+
+  let stepIdx = 0;
+  const stepInterval = setInterval(() => {
+    stepEl.textContent = loadingSteps[stepIdx++ % loadingSteps.length];
+  }, 500);
+
+  const formData = new FormData();
+  formData.append('file', selectedFile);
+
+  try {
+    const resp = await fetch('/predict', { method:'POST', body: formData });
+    const data = await resp.json();
+
+    clearInterval(stepInterval);
+    overlay.classList.remove('active');
+
+    displayResults(data);
+  } catch(err) {
+    clearInterval(stepInterval);
+    overlay.classList.remove('active');
+    showToast('❌ Error connecting to server', '#f87171');
+    console.error(err);
+  }
+}
+
+function displayResults(data) {
+  const color = CELL_COLORS[data.prediction] || '#38bdf8';
+
+  // Show/hide
+  document.getElementById('placeholder').style.display = 'none';
+  document.getElementById('results').classList.add('visible');
+  document.getElementById('resetBtn').style.display = 'block';
+  analyzeBtn.style.display = 'none';
+
+  if(data.demo_mode) {
+    document.getElementById('demoBanner').classList.add('visible');
+  }
+
+  // Prediction hero
+  const hero = document.getElementById('predHero');
+  hero.classList.add('revealed');
+  document.getElementById('predGlow').style.background = color;
+  document.getElementById('predGlow').style.boxShadow = `0 0 80px ${color}`;
+
+  const nameEl = document.getElementById('cellTypeName');
+  nameEl.textContent = data.prediction;
+  nameEl.style.color = color;
+
+  // Animated counter
+  animateNumber(document.getElementById('confValue'), data.confidence, '%', 1);
+  setTimeout(() => {
+    document.getElementById('confBar').style.width = data.confidence + '%';
+  }, 300);
+
+  // Description
+  const descEl = document.getElementById('cellDesc');
+  descEl.textContent = data.info.description;
+  descEl.style.borderColor = color;
+
+  document.getElementById('normalRange').textContent = `📊 Normal Range: ${data.info.normal_range}`;
+
+  // Probability bars
+  const barsEl = document.getElementById('probBars');
+  barsEl.innerHTML = '';
+
+  const sortedProbs = Object.entries(data.probabilities).sort((a,b) => b[1]-a[1]);
+
+  sortedProbs.forEach(([cls, prob], i) => {
+    const clsColor = CELL_COLORS[cls];
+    const row = document.createElement('div');
+    row.className = 'prob-row';
+    row.innerHTML = `
+      <span class="prob-label" style="color:${clsColor}">${cls}</span>
+      <div class="prob-bar-wrap">
+        <div class="prob-bar-fill" id="bar-${cls}" style="background:linear-gradient(90deg,${clsColor}aa,${clsColor})"></div>
+      </div>
+      <span class="prob-value">${prob.toFixed(1)}%</span>
+    `;
+    barsEl.appendChild(row);
+
+    setTimeout(() => {
+      row.classList.add('revealed');
+      setTimeout(() => {
+        document.getElementById(`bar-${cls}`).style.width = prob + '%';
+      }, 100);
+    }, i * 150);
+  });
+
+  // Images
+  if(data.original) {
+    document.getElementById('origImg').src = `data:image/png;base64,${data.original}`;
+  }
+
+  if(data.heatmap) {
+    document.getElementById('heatImg').src = `data:image/png;base64,${data.heatmap}`;
+    document.getElementById('heatmapCard').style.display = 'block';
+  } else {
+    document.getElementById('heatmapCard').style.display = 'none';
+  }
+
+  showToast(`✅ ${data.prediction} detected — ${data.confidence.toFixed(1)}% confidence`);
+}
+
+function animateNumber(el, target, suffix, decimals) {
+  let start = 0;
+  const duration = 1200;
+  const startTime = performance.now();
+
+  function tick(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = start + (target - start) * eased;
+    el.textContent = current.toFixed(decimals) + suffix;
+    if(progress < 1) requestAnimationFrame(tick);
+  }
+
+  requestAnimationFrame(tick);
+}
+
+function resetApp() {
+  selectedFile = null;
+  fileInput.value = '';
+  previewContainer.classList.remove('visible');
+  uploadZone.style.display = 'flex';
+  analyzeBtn.disabled = true;
+  analyzeBtn.style.display = 'block';
+  document.getElementById('resetBtn').style.display = 'none';
+  document.getElementById('placeholder').style.display = 'flex';
+  document.getElementById('results').classList.remove('visible');
+  document.getElementById('demoBanner').classList.remove('visible');
+}
+
+function showToast(msg, color) {
+  const toast = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  if(color) toast.style.borderColor = color;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 4000);
+}
+</script>
+</body>
+</html>
