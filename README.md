@@ -15,6 +15,9 @@
 
 ---
 
+![](blood_cell.gif)
+
+
 ## 🎯 Overview
 
 HemaVision AI is a full-stack deep learning platform that classifies white blood cells from microscopy images into 4 clinically relevant categories with **99.1% accuracy**. Beyond classification, it generates **GradCAM activation heatmaps** that reveal exactly which morphological features drove the model's decision — making it explainable and trustworthy for clinical use.
